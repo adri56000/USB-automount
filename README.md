@@ -1,6 +1,6 @@
 # USB-automount
 ### Structure du dépôt
-#####usb-automount-smb/
+##### usb-automount-smb/
  ├── udev-rules/10-usb-drive-automount.rules
  ├── smb.conf
  ├── README.md
