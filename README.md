@@ -2,43 +2,40 @@
 
 ## USB Automount & SMB Share
 
-This project sets up a Linux system (e.g., Raspberry Pi) to:
+Ce projet configure un système Linux (par exemple, Raspberry Pi) pour :
 
-1. Automatically mount USB drives when plugged in.
-2. Share these USB drives over the network using Samba.
-
-### Summary
-
-This configuration ensures that any USB drive plugged into the system is automatically mounted and made accessible over the network for other devices. It uses udev rules for mounting and Samba for network sharing.
+1. Monter automatiquement les clés USB lorsqu'elles sont branchées.
+2. Partager ces clés USB sur le réseau grâce à Samba.
 
 ### Installation
 
-#### 1. Install Prerequisites
+#### 1. Installer les prérequis
 
-Ensure the following tools are installed:
+Assurez-vous que les outils suivants sont installés :
 
 ```bash
 sudo apt update
 sudo apt install samba systemd
 ```
 
-#### 2. Configure udev for Automounting
+#### 2. Configurer udev pour l'automontage
 
-Copy the file `10-usb-drive-automount.rules` to `/etc/udev/rules.d/`:
+Copiez le fichier `10-usb-drive-automount.rules` dans `/etc/udev/rules.d/` :
 
 ```bash
 sudo cp udev-rules/10-usb-drive-automount.rules /etc/udev/rules.d/
 ```
 
-Reload udev:
+Rechargez udev :
 
 ```bash
 sudo udevadm control --reload-rules
+sudo udevadm trigger
 ```
 
-#### 3. Configure Samba for Network Sharing
+#### 3. Configurer Samba pour le partage réseau
 
-Add the following configuration to the Samba configuration file (`/etc/samba/smb.conf`):
+Ajoutez la configuration suivante au fichier Samba (`/etc/samba/smb.conf`) :
 
 ```
 [USB-Share]
@@ -52,21 +49,20 @@ directory mask = 0777
 force user = nobody
 ```
 
-Restart the Samba service:
+Redémarrez le service Samba :
 
 ```bash
 sudo systemctl restart smbd
 ```
 
-#### 4. Test the Network Share
+#### 4. Testez le partage réseau
 
-Plug in a USB drive, then access the shared folder via the network address of your machine (e.g., `\\192.168.x.x\USB-Share`).
+Connectez une clé USB, puis accédez au dossier partagé via l'adresse réseau de votre machine (par exemple, `\\192.168.x.x\USB-Share`).
 
 ---
 
-If issues arise, check the logs for udev and Samba:
+En cas de problème, consultez les journaux udev et Samba :
 
 ```bash
 journalctl -u udev
 journalctl -u smbd
-```
