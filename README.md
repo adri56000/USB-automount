@@ -1,9 +1,9 @@
 # USB-automount
-# Structure du dépôt
-# usb-automount-smb/
-# ├── udev-rules/10-usb-drive-automount.rules
-# ├── smb.conf
-# ├── README.md
+### Structure du dépôt
+#####usb-automount-smb/
+ ├── udev-rules/10-usb-drive-automount.rules
+ ├── smb.conf
+ ├── README.md
 
 # Contenu du fichier udev-rules/10-usb-drive-automount.rules
 
