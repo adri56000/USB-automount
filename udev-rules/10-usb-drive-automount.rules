@@ -1,0 +1,36 @@
+# Montage automatique de clés ou disques durs USB
+# Créer le fichier: /etc/udev/rules.d/10-usb-drive-automount.rules
+
+KERNEL!="sd[a-z][1-9]", GOTO="usb_drive_automount_end"
+
+# Chemin du dossier où est créé le point de montage
+ENV{mount_point}="/media"
+
+# Nom du point de montage
+# Le point de montage prend le nom de la partition (ex: sda1) suivi du label de la partition s'il existe
+ENV{ID_FS_LABEL}!="", ENV{dir_name}="%k-%E{ID_FS_LABEL}"
+ENV{ID_FS_LABEL}=="", ENV{dir_name}="%k"
+
+#
+# ACTIONS À L'INSERTION DE LA CLÉ USB
+#
+
+# Création du dossier qui va servir de point de montage
+ACTION=="add", RUN+="/bin/mkdir -p '%E{mount_point}/%E{dir_name}'"
+
+# Montage de la partition avec "systemd-mount". Ne pas utiliser "mount" car ça ne fonctionne pas
+ACTION=="add", SUBSYSTEMS=="usb", SUBSYSTEM=="block", ENV{ID_FS_USAGE}=="filesystem", RUN{program}+="/usr/bin/systemd-mount --no-block --automount=yes --options=dmask=000,fmask=000 --owner=nobody --collect $devnode %E{mount_point}/%E{dir_name}"
+
+#
+# ACTIONS AU RETRAIT DE LA CLÉ USB
+#
+
+# Démontage de la partition
+ACTION=="remove", RUN{program}+="/usr/bin/systemd-umount '%E{mount_point}/%E{dir_name}'"
+
+# Suppression du dossier de point de montage, avec journalisation et suppression forcée
+ACTION=="remove", ENV{dir_name}!="", RUN+="/bin/sh -c 'rm -rf \"%E{mount_point}/%E{dir_name}\"'"
+ACTION=="remove", ENV{dir_name}!="", RUN+="/usr/bin/logger 'Suppression du dossier %E{mount_point}/%E{dir_name}'"
+
+# Sortie du script
+LABEL="usb_drive_automount_end"
