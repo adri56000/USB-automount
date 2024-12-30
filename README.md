@@ -1,76 +1,44 @@
 # USB-automount
 
-## Contenu du fichier udev-rules/10-usb-drive-automount.rules
-
-KERNEL!="sd[a-z][1-9]", GOTO="usb_drive_automount_end"
-
-ENV{mount_point}="/media"
-
-ENV{ID_FS_LABEL}!="", ENV{dir_name}="%k-%E{ID_FS_LABEL}"
-ENV{ID_FS_LABEL}=="", ENV{dir_name}="%k"
-
-## Création du dossier de montage
-ACTION=="add", RUN+="/bin/mkdir -p '%E{mount_point}/%E{dir_name}'"
-
-## Montage automatique avec systemd-mount
-ACTION=="add", SUBSYSTEMS=="usb", SUBSYSTEM=="block", ENV{ID_FS_USAGE}=="filesystem", RUN{program}+="/usr/bin/systemd-mount --no-block --automount=yes --options=dmask=000,fmask=000 --owner=nobody --collect $devnode %E{mount_point}/%E{dir_name}"
-
-## Démontage lors du retrait de la clé
-ACTION=="remove", RUN{program}+="/usr/bin/systemd-umount '%E{mount_point}/%E{dir_name}'"
-ACTION=="remove", ENV{dir_name}!="", RUN+="/bin/sh -c 'rm -rf \"%E{mount_point}/%E{dir_name}\"'"
-ACTION=="remove", ENV{dir_name}!="", RUN+="/usr/bin/logger 'Suppression du dossier %E{mount_point}/%E{dir_name}'"
-
-LABEL="usb_drive_automount_end"
-
-## Contenu du fichier smb.conf
-
-[USB-Share]
-path = /media
-browsable = yes
-writable = yes
-guest ok = yes
-public = yes
-create mask = 0777
-directory mask = 0777
-force user = nobody
-
-## Contenu du fichier README.md
-
 ## USB Automount & SMB Share
 
-Ce projet configure un système Linux (par exemple, Raspberry Pi) pour :
+This project sets up a Linux system (e.g., Raspberry Pi) to:
 
-1. Monter automatiquement les clés USB lorsqu'elles sont branchées.
-2. Partager ces clés USB sur le réseau grâce à Samba.
+1. Automatically mount USB drives when plugged in.
+2. Share these USB drives over the network using Samba.
+
+### Summary
+
+This configuration ensures that any USB drive plugged into the system is automatically mounted and made accessible over the network for other devices. It uses udev rules for mounting and Samba for network sharing.
 
 ### Installation
 
-#### 1. Installer les prérequis
+#### 1. Install Prerequisites
 
-Assurez-vous que les outils suivants sont installés :
+Ensure the following tools are installed:
 
 ```bash
 sudo apt update
 sudo apt install samba systemd
 ```
 
-#### 2. Configurer udev pour l'automontage
+#### 2. Configure udev for Automounting
 
-Copiez le fichier `10-usb-drive-automount.rules` dans `/etc/udev/rules.d/` :
+Copy the file `10-usb-drive-automount.rules` to `/etc/udev/rules.d/`:
 
 ```bash
 sudo cp udev-rules/10-usb-drive-automount.rules /etc/udev/rules.d/
 ```
 
-Rechargez udev :
+Reload udev:
 
 ```bash
 sudo udevadm control --reload-rules
 ```
 
-#### 3. Configurer Samba pour le partage réseau
+#### 3. Configure Samba for Network Sharing
 
-Ajoutez la configuration suivante au fichier Samba (`/etc/samba/smb.conf`) :
+Add the following configuration to the Samba configuration file (`/etc/samba/smb.conf`):
 
 ```
 [USB-Share]
@@ -84,20 +52,21 @@ directory mask = 0777
 force user = nobody
 ```
 
-Redémarrez le service Samba :
+Restart the Samba service:
 
 ```bash
 sudo systemctl restart smbd
 ```
 
-#### 4. Testez le partage réseau
+#### 4. Test the Network Share
 
-Connectez une clé USB, puis accédez au dossier partagé via l'adresse réseau de votre machine (par exemple, `\\192.168.x.x\USB-Share`).
+Plug in a USB drive, then access the shared folder via the network address of your machine (e.g., `\\192.168.x.x\USB-Share`).
 
 ---
 
-En cas de problème, consultez les journaux udev et Samba :
+If issues arise, check the logs for udev and Samba:
 
 ```bash
 journalctl -u udev
 journalctl -u smbd
+```
